@@ -1,5 +1,6 @@
 name: flutter_blue_plus_example
 description: Demonstrates how to use the flutter_blue_plus plugin.
+version: 1.0.0+1 # version
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -11,11 +12,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_blue_plus: ^1.32.8
+  shared_preferences: ^2.0.6
 
-  flutter_blue_plus:
-    # Note: We use a path dependency because the example app & plugin are bundled together.
-    # In *your* app you should use ^1.17.3 or similar 
-    path: ../
+  # Uncomment the following lines if you are developing both the plugin and the example together.
+  # flutter_blue_plus:
+  #   path: ../
 
 flutter:
   uses-material-design: true

@@ -1,13 +1,14 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_blue_plus_example/utils/extra.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Add this line
+
 
 import '../widgets/service_tile.dart';
 import '../widgets/characteristic_tile.dart';
 import '../widgets/descriptor_tile.dart';
 import '../utils/snackbar.dart';
-import '../utils/extra.dart';
 
 class DeviceScreen extends StatefulWidget {
   final BluetoothDevice device;
@@ -23,6 +24,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   int? _mtuSize;
   BluetoothConnectionState _connectionState = BluetoothConnectionState.disconnected;
   List<BluetoothService> _services = [];
+  Map<Guid, String> _characteristicValues = {}; // Store decoded characteristic values
   bool _isDiscoveringServices = false;
   bool _isConnecting = false;
   bool _isDisconnecting = false;
@@ -84,7 +86,12 @@ class _DeviceScreenState extends State<DeviceScreen> {
     return _connectionState == BluetoothConnectionState.connected;
   }
 
-  Future onConnectPressed() async {
+  Future<void> _saveCharacteristicValue(Guid uuid, String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(uuid.toString(), value);
+  }
+
+  Future<void> onConnectPressed() async {
     try {
       await widget.device.connectAndUpdateStream();
       Snackbar.show(ABC.c, "Connect: Success", success: true);
@@ -97,7 +104,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
   }
 
-  Future onCancelPressed() async {
+  Future<void> onCancelPressed() async {
     try {
       await widget.device.disconnectAndUpdateStream(queue: false);
       Snackbar.show(ABC.c, "Cancel: Success", success: true);
@@ -106,7 +113,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
   }
 
-  Future onDisconnectPressed() async {
+  Future<void> onDisconnectPressed() async {
     try {
       await widget.device.disconnectAndUpdateStream();
       Snackbar.show(ABC.c, "Disconnect: Success", success: true);
@@ -115,7 +122,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
   }
 
-  Future onDiscoverServicesPressed() async {
+  Future<void> onDiscoverServicesPressed() async {
     if (mounted) {
       setState(() {
         _isDiscoveringServices = true;
@@ -123,6 +130,21 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
     try {
       _services = await widget.device.discoverServices();
+
+      // Read characteristics for each service
+      for (BluetoothService service in _services) {
+        for (BluetoothCharacteristic characteristic in service.characteristics) {
+          if (characteristic.properties.read) {
+            List<int> value = await characteristic.read();
+            String decodedString = String.fromCharCodes(value);
+            setState(() {
+              _characteristicValues[characteristic.uuid] = decodedString; // Store decoded value
+            });
+            _saveCharacteristicValue(characteristic.uuid, decodedString); // Save to SharedPreferences
+          }
+        }
+      }
+
       Snackbar.show(ABC.c, "Discover Services: Success", success: true);
     } catch (e) {
       Snackbar.show(ABC.c, prettyException("Discover Services Error:", e), success: false);
@@ -134,7 +156,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
   }
 
-  Future onRequestMtuPressed() async {
+  Future<void> onRequestMtuPressed() async {
     try {
       await widget.device.requestMtu(223, predelay: 0);
       Snackbar.show(ABC.c, "Request Mtu: Success", success: true);
@@ -158,6 +180,13 @@ class _DeviceScreenState extends State<DeviceScreen> {
     return CharacteristicTile(
       characteristic: c,
       descriptorTiles: c.descriptors.map((d) => DescriptorTile(descriptor: d)).toList(),
+      additionalInfo: _characteristicValues[c.uuid] ?? '',
+      onValueChanged: (newValue) {
+        setState(() {
+          _characteristicValues[c.uuid] = newValue;
+        });
+        _saveCharacteristicValue(c.uuid, newValue); // Save to SharedPreferences
+      },
     );
   }
 

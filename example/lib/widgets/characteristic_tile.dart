@@ -5,29 +5,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 import "../utils/snackbar.dart";
-
 import "descriptor_tile.dart";
+import '../visualize_screen.dart'; // Import the new screen
 
 class CharacteristicTile extends StatefulWidget {
   final BluetoothCharacteristic characteristic;
   final List<DescriptorTile> descriptorTiles;
+  final String additionalInfo;
+  final Function(String) onValueChanged;
 
-  const CharacteristicTile({Key? key, required this.characteristic, required this.descriptorTiles}) : super(key: key);
+  const CharacteristicTile({Key? key, required this.characteristic, required this.descriptorTiles, required this.additionalInfo, required this.onValueChanged}) : super(key: key);
 
   @override
   State<CharacteristicTile> createState() => _CharacteristicTileState();
 }
 
 class _CharacteristicTileState extends State<CharacteristicTile> {
+  StreamSubscription<List<int>>? _valueSubscription;
   List<int> _value = [];
-
-  late StreamSubscription<List<int>> _lastValueSubscription;
 
   @override
   void initState() {
     super.initState();
-    _lastValueSubscription = widget.characteristic.lastValueStream.listen((value) {
+    _valueSubscription = widget.characteristic.lastValueStream.listen((value) {
       _value = value;
+      String decodedString = String.fromCharCodes(value);
+      widget.onValueChanged(decodedString);
       if (mounted) {
         setState(() {});
       }
@@ -36,7 +39,7 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
 
   @override
   void dispose() {
-    _lastValueSubscription.cancel();
+    _valueSubscription?.cancel();
     super.dispose();
   }
 
@@ -49,7 +52,9 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
 
   Future onReadPressed() async {
     try {
-      await c.read();
+      List<int> value = await c.read();
+      String decodedString = String.fromCharCodes(value);
+      widget.onValueChanged(decodedString);
       Snackbar.show(ABC.c, "Read: Success", success: true);
     } catch (e) {
       Snackbar.show(ABC.c, prettyException("Read Error:", e), success: false);
@@ -70,7 +75,7 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
 
   Future onSubscribePressed() async {
     try {
-      String op = c.isNotifying == false ? "Subscribe" : "Unubscribe";
+      String op = c.isNotifying == false ? "Subscribe" : "Unsubscribe";
       await c.setNotifyValue(c.isNotifying == false);
       Snackbar.show(ABC.c, "$op : Success", success: true);
       if (c.properties.read) {
@@ -84,6 +89,15 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
     }
   }
 
+  void onVisualizePressed(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VisualizeScreen(characteristic: widget.characteristic),
+      ),
+    );
+  }
+
   Widget buildUuid(BuildContext context) {
     String uuid = '0x${widget.characteristic.uuid.str.toUpperCase()}';
     return Text(uuid, style: TextStyle(fontSize: 13));
@@ -91,7 +105,14 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
 
   Widget buildValue(BuildContext context) {
     String data = _value.toString();
-    return Text(data, style: TextStyle(fontSize: 13, color: Colors.grey));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(data, style: TextStyle(fontSize: 13, color: Colors.grey)),
+        if (widget.additionalInfo.isNotEmpty)
+          Text(widget.additionalInfo, style: TextStyle(fontSize: 13, color: Colors.blue)),
+      ],
+    );
   }
 
   Widget buildReadButton(BuildContext context) {
@@ -129,6 +150,15 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
         });
   }
 
+  Widget buildVisualizeButton(BuildContext context) {
+    return TextButton(
+      child: Text("Visualize"),
+      onPressed: () {
+        onVisualizePressed(context);
+      },
+    );
+  }
+
   Widget buildButtonRow(BuildContext context) {
     bool read = widget.characteristic.properties.read;
     bool write = widget.characteristic.properties.write;
@@ -140,6 +170,7 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
         if (read) buildReadButton(context),
         if (write) buildWriteButton(context),
         if (notify || indicate) buildSubscribeButton(context),
+        buildVisualizeButton(context), // Add Visualize button
       ],
     );
   }
