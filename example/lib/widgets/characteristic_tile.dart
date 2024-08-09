@@ -5,32 +5,49 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import '../utils/database_helper.dart';  // Added import for DatabaseHelper
 import "../utils/snackbar.dart";
 import "descriptor_tile.dart";
+<<<<<<< HEAD
+=======
+import '../visualize_screen.dart'; // Import the new screen
+
+>>>>>>> acbeb6bf0d4bef70265b72ac8f6f23cd5f871669
 class CharacteristicTile extends StatefulWidget {
   final BluetoothCharacteristic characteristic;
   final List<DescriptorTile> descriptorTiles;
   final String additionalInfo;
+<<<<<<< HEAD
 
   const CharacteristicTile({Key? key, required this.characteristic, required this.descriptorTiles, required this.additionalInfo}) : super(key: key);
+=======
+  final Function(String) onValueChanged;
+
+  const CharacteristicTile({Key? key, required this.characteristic, required this.descriptorTiles, required this.additionalInfo, required this.onValueChanged}) : super(key: key);
+>>>>>>> acbeb6bf0d4bef70265b72ac8f6f23cd5f871669
 
   @override
   State<CharacteristicTile> createState() => _CharacteristicTileState();
 }
 
 class _CharacteristicTileState extends State<CharacteristicTile> {
+  StreamSubscription<List<int>>? _valueSubscription;
   List<int> _value = [];
   String _decodedValue = '';
   List<String> _readValues = []; // List to store read values
 
-  late StreamSubscription<List<int>> _lastValueSubscription;
-
   @override
   void initState() {
     super.initState();
+<<<<<<< HEAD
     _lastValueSubscription = widget.characteristic.lastValueStream.listen((value) async {
       _value = value;
       _decodedValue = _decodeValue(value);
       await DatabaseHelper().insertSinusData(_decodedValue); // Save new value to the database
       _readValues = await DatabaseHelper().getSinusData(); // Retrieve data from the database
+=======
+    _valueSubscription = widget.characteristic.lastValueStream.listen((value) {
+      _value = value;
+      String decodedString = String.fromCharCodes(value);
+      widget.onValueChanged(decodedString);
+>>>>>>> acbeb6bf0d4bef70265b72ac8f6f23cd5f871669
       if (mounted) {
         setState(() {});
       }
@@ -39,7 +56,7 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
 
   @override
   void dispose() {
-    _lastValueSubscription.cancel();
+    _valueSubscription?.cancel();
     super.dispose();
   }
 
@@ -65,12 +82,17 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
   Future onReadPressed() async {
     try {
       List<int> value = await c.read();
+<<<<<<< HEAD
       _decodedValue = _decodeValue(value);
       await DatabaseHelper().insertSinusData(_decodedValue); // Save new value to the database
       _readValues = await DatabaseHelper().getSinusData(); // Retrieve data from the database
       if (mounted) {
         setState(() {});
       }
+=======
+      String decodedString = String.fromCharCodes(value);
+      widget.onValueChanged(decodedString);
+>>>>>>> acbeb6bf0d4bef70265b72ac8f6f23cd5f871669
       Snackbar.show(ABC.c, "Read: Success", success: true);
     } catch (e) {
       Snackbar.show(ABC.c, prettyException("Read Error:", e), success: false);
@@ -114,6 +136,7 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
     }
   }
 
+<<<<<<< HEAD
   // Helper method to decode the value
   String _decodeValue(List<int> value) {
     try {
@@ -121,6 +144,15 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
     } catch (e) {
       return value.toString(); // Fallback to displaying the byte array
     }
+=======
+  void onVisualizePressed(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VisualizeScreen(characteristic: widget.characteristic),
+      ),
+    );
+>>>>>>> acbeb6bf0d4bef70265b72ac8f6f23cd5f871669
   }
 
   Widget buildUuid(BuildContext context) {
@@ -129,7 +161,11 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
   }
 
   Widget buildValue(BuildContext context) {
+<<<<<<< HEAD
     String data = _decodedValue.isNotEmpty ? _decodedValue : _value.toString();
+=======
+    String data = _value.toString();
+>>>>>>> acbeb6bf0d4bef70265b72ac8f6f23cd5f871669
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -178,6 +214,15 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
     );
   }
 
+  Widget buildVisualizeButton(BuildContext context) {
+    return TextButton(
+      child: Text("Visualize"),
+      onPressed: () {
+        onVisualizePressed(context);
+      },
+    );
+  }
+
   Widget buildButtonRow(BuildContext context) {
     bool read = widget.characteristic.properties.read;
     bool write = widget.characteristic.properties.write;
@@ -189,6 +234,7 @@ class _CharacteristicTileState extends State<CharacteristicTile> {
         if (read) buildReadButton(context),
         if (write) buildWriteButton(context),
         if (notify || indicate) buildSubscribeButton(context),
+        buildVisualizeButton(context), // Add Visualize button
       ],
     );
   }

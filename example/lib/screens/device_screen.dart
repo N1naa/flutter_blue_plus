@@ -1,8 +1,13 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+<<<<<<< HEAD
 import '../utils/extra.dart';
+=======
+import 'package:flutter_blue_plus_example/utils/extra.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Add this line
+
+>>>>>>> acbeb6bf0d4bef70265b72ac8f6f23cd5f871669
 
 import '../widgets/service_tile.dart';
 import '../widgets/characteristic_tile.dart';
@@ -23,7 +28,11 @@ class _DeviceScreenState extends State<DeviceScreen> {
   int? _mtuSize;
   BluetoothConnectionState _connectionState = BluetoothConnectionState.disconnected;
   List<BluetoothService> _services = [];
+<<<<<<< HEAD
   Map<Guid, String> _characteristicValues = {}; // Add this line
+=======
+  Map<Guid, String> _characteristicValues = {}; // Store decoded characteristic values
+>>>>>>> acbeb6bf0d4bef70265b72ac8f6f23cd5f871669
   bool _isDiscoveringServices = false;
   bool _isConnecting = false;
   bool _isDisconnecting = false;
@@ -86,7 +95,12 @@ class _DeviceScreenState extends State<DeviceScreen> {
     return _connectionState == BluetoothConnectionState.connected;
   }
 
-  Future onConnectPressed() async {
+  Future<void> _saveCharacteristicValue(Guid uuid, String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(uuid.toString(), value);
+  }
+
+  Future<void> onConnectPressed() async {
     try {
       await widget.device.connectAndUpdateStream();
       Snackbar.show(ABC.c, "Connect: Success", success: true);
@@ -98,8 +112,13 @@ class _DeviceScreenState extends State<DeviceScreen> {
       }
     }
   }
+<<<<<<< HEAD
 // a Future is a type used to represent a value or an error that will be available at some point in the future
   Future onCancelPressed() async {
+=======
+
+  Future<void> onCancelPressed() async {
+>>>>>>> acbeb6bf0d4bef70265b72ac8f6f23cd5f871669
     try {
       await widget.device.disconnectAndUpdateStream(queue: false);
       Snackbar.show(ABC.c, "Cancel: Success", success: true);
@@ -107,8 +126,13 @@ class _DeviceScreenState extends State<DeviceScreen> {
       Snackbar.show(ABC.c, prettyException("Cancel Error:", e), success: false);
     }
   }
+<<<<<<< HEAD
 // A Snackbar is a lightweight feedback mechanism used in mobile and web applications to provide brief messages to the user.
   Future onDisconnectPressed() async {
+=======
+
+  Future<void> onDisconnectPressed() async {
+>>>>>>> acbeb6bf0d4bef70265b72ac8f6f23cd5f871669
     try {
       await widget.device.disconnectAndUpdateStream();
       Snackbar.show(ABC.c, "Disconnect: Success", success: true);
@@ -117,7 +141,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
   }
 
-  Future onDiscoverServicesPressed() async {
+  Future<void> onDiscoverServicesPressed() async {
     if (mounted) {
       setState(() {
         _isDiscoveringServices = true;
@@ -133,8 +157,14 @@ class _DeviceScreenState extends State<DeviceScreen> {
             List<int> value = await characteristic.read();
             String decodedString = String.fromCharCodes(value);
             setState(() {
+<<<<<<< HEAD
               _characteristicValues[characteristic.uuid] = decodedString; // Add this line
             });
+=======
+              _characteristicValues[characteristic.uuid] = decodedString; // Store decoded value
+            });
+            _saveCharacteristicValue(characteristic.uuid, decodedString); // Save to SharedPreferences
+>>>>>>> acbeb6bf0d4bef70265b72ac8f6f23cd5f871669
           }
         }
       }
@@ -150,7 +180,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
   }
 
-  Future onRequestMtuPressed() async {
+  Future<void> onRequestMtuPressed() async {
     try {
       await widget.device.requestMtu(223, predelay: 0);
       Snackbar.show(ABC.c, "Request Mtu: Success", success: true);
@@ -174,8 +204,18 @@ class _DeviceScreenState extends State<DeviceScreen> {
     return CharacteristicTile(
       characteristic: c,
       descriptorTiles: c.descriptors.map((d) => DescriptorTile(descriptor: d)).toList(),
+<<<<<<< HEAD
       additionalInfo: _characteristicValues[c.uuid] ?? '', // Add this line
       
+=======
+      additionalInfo: _characteristicValues[c.uuid] ?? '',
+      onValueChanged: (newValue) {
+        setState(() {
+          _characteristicValues[c.uuid] = newValue;
+        });
+        _saveCharacteristicValue(c.uuid, newValue); // Save to SharedPreferences
+      },
+>>>>>>> acbeb6bf0d4bef70265b72ac8f6f23cd5f871669
     );
   }
 

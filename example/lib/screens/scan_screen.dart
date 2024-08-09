@@ -1,12 +1,21 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+<<<<<<< HEAD
 import '../utils/extra.dart';
+=======
+import 'package:flutter_blue_plus_example/utils/extra.dart';
+//import 'package:flutter_blue/flutter_blue.dart';
+
+>>>>>>> acbeb6bf0d4bef70265b72ac8f6f23cd5f871669
 import 'device_screen.dart';
 import '../utils/snackbar.dart';
 import '../widgets/system_device_tile.dart';
 import '../widgets/scan_result_tile.dart';
+<<<<<<< HEAD
 import '../widgets/app_text.dart';
+=======
+>>>>>>> acbeb6bf0d4bef70265b72ac8f6f23cd5f871669
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({Key? key}) : super(key: key);
