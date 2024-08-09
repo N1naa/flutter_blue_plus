@@ -30,3 +30,4 @@
 .packages
 build/
 .pub/
+*.zip

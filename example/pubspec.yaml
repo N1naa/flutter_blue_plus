@@ -1,21 +1,34 @@
 name: flutter_blue_plus_example
 description: Demonstrates how to use the flutter_blue_plus plugin.
+version: 1.0.0+1 # version
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none'
 
 environment:
-  sdk: ">=2.15.1 <3.0.0"
+  # sdk: ">=2.15.1 <3.0.0"
+  #sdk: ">=2.17.0"
+  sdk: ">=3.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-
-  flutter_blue_plus:
-    # Note: We use a path dependency because the example app & plugin are bundled together.
-    # In *your* app you should use ^1.17.3 or similar 
-    path: ../
-
+  flutter_blue_plus: ^1.32.8
+  #fl_chart : 0.36.0
+  #fl_chart : ^0.36.0
+  fl_chart: ^0.68.0
+  sqflite: ^2.0.0+4
+  path_provider: ^2.0.11
+  path: any
 flutter:
   uses-material-design: true
+  assets: 
+      - lib/images/background0.png
+      - lib/images/background1.png
+      - lib/images/background2.png
+      - lib/images/background0_1.png
+      - lib/images/stress.png
+      - lib/images/food.png
+      - lib/images/questions.png
+      - lib/images/team.jpg

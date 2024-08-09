@@ -2,15 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import '../utils/extra.dart';
 
 import '../widgets/service_tile.dart';
 import '../widgets/characteristic_tile.dart';
 import '../widgets/descriptor_tile.dart';
 import '../utils/snackbar.dart';
-import '../utils/extra.dart';
 
 class DeviceScreen extends StatefulWidget {
-  final BluetoothDevice device;
+  final BluetoothDevice device; //"Final" means we won't be changing this anymore -> use when not know where variable is in compiletime
 
   const DeviceScreen({Key? key, required this.device}) : super(key: key);
 
@@ -23,6 +23,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   int? _mtuSize;
   BluetoothConnectionState _connectionState = BluetoothConnectionState.disconnected;
   List<BluetoothService> _services = [];
+  Map<Guid, String> _characteristicValues = {}; // Add this line
   bool _isDiscoveringServices = false;
   bool _isConnecting = false;
   bool _isDisconnecting = false;
@@ -31,6 +32,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   late StreamSubscription<bool> _isConnectingSubscription;
   late StreamSubscription<bool> _isDisconnectingSubscription;
   late StreamSubscription<int> _mtuSubscription;
+  // Streams in Dart are a way to handle asynchronous events. Each subscription listens for updates from the respective streams.
 
   @override
   void initState() {
@@ -96,7 +98,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
       }
     }
   }
-
+// a Future is a type used to represent a value or an error that will be available at some point in the future
   Future onCancelPressed() async {
     try {
       await widget.device.disconnectAndUpdateStream(queue: false);
@@ -105,7 +107,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
       Snackbar.show(ABC.c, prettyException("Cancel Error:", e), success: false);
     }
   }
-
+// A Snackbar is a lightweight feedback mechanism used in mobile and web applications to provide brief messages to the user.
   Future onDisconnectPressed() async {
     try {
       await widget.device.disconnectAndUpdateStream();
@@ -123,6 +125,20 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
     try {
       _services = await widget.device.discoverServices();
+
+      // Read characteristics for each service
+      for (BluetoothService service in _services) {
+        for (BluetoothCharacteristic characteristic in service.characteristics) {
+          if (characteristic.properties.read) {
+            List<int> value = await characteristic.read();
+            String decodedString = String.fromCharCodes(value);
+            setState(() {
+              _characteristicValues[characteristic.uuid] = decodedString; // Add this line
+            });
+          }
+        }
+      }
+
       Snackbar.show(ABC.c, "Discover Services: Success", success: true);
     } catch (e) {
       Snackbar.show(ABC.c, prettyException("Discover Services Error:", e), success: false);
@@ -158,6 +174,8 @@ class _DeviceScreenState extends State<DeviceScreen> {
     return CharacteristicTile(
       characteristic: c,
       descriptorTiles: c.descriptors.map((d) => DescriptorTile(descriptor: d)).toList(),
+      additionalInfo: _characteristicValues[c.uuid] ?? '', // Add this line
+      
     );
   }
 
@@ -253,8 +271,10 @@ class _DeviceScreenState extends State<DeviceScreen> {
                 title: Text('Device is ${_connectionState.toString().split('.')[1]}.'),
                 trailing: buildGetServices(context),
               ),
-              buildMtuTile(context),
-              ..._buildServiceTiles(context, widget.device),
+              //buildMtuTile(context),
+              ///..._buildServiceTiles(context, widget.device),
+              ..._buildServiceTiles(context, widget.device), //"spread operator." They are used to insert the elements of a list into another list
+              // 3 dots used for dynamics view
             ],
           ),
         ),

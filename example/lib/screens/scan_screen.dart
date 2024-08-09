@@ -1,13 +1,12 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-
+import '../utils/extra.dart';
 import 'device_screen.dart';
 import '../utils/snackbar.dart';
 import '../widgets/system_device_tile.dart';
 import '../widgets/scan_result_tile.dart';
-import '../utils/extra.dart';
+import '../widgets/app_text.dart';
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({Key? key}) : super(key: key);
@@ -20,6 +19,7 @@ class _ScanScreenState extends State<ScanScreen> {
   List<BluetoothDevice> _systemDevices = [];
   List<ScanResult> _scanResults = [];
   bool _isScanning = false;
+  bool _hasScanned = false; // Added to manage the state of text visibility
   late StreamSubscription<List<ScanResult>> _scanResultsSubscription;
   late StreamSubscription<bool> _isScanningSubscription;
 
@@ -63,7 +63,10 @@ class _ScanScreenState extends State<ScanScreen> {
       Snackbar.show(ABC.b, prettyException("Start Scan Error:", e), success: false);
     }
     if (mounted) {
-      setState(() {});
+      setState(() {
+        _isScanning = true; // Update the scanning state
+        _hasScanned = true; // Ensure the text does not reappear after stopping the scan
+      });
     }
   }
 
@@ -72,6 +75,11 @@ class _ScanScreenState extends State<ScanScreen> {
       FlutterBluePlus.stopScan();
     } catch (e) {
       Snackbar.show(ABC.b, prettyException("Stop Scan Error:", e), success: false);
+    }
+    if (mounted) {
+      setState(() {
+        _isScanning = false; // Update the scanning state to false
+      });
     }
   }
 
@@ -142,14 +150,50 @@ class _ScanScreenState extends State<ScanScreen> {
         appBar: AppBar(
           title: const Text('Find Devices'),
         ),
-        body: RefreshIndicator(
-          onRefresh: onRefresh,
-          child: ListView(
-            children: <Widget>[
-              ..._buildSystemDeviceTiles(context),
-              ..._buildScanResultTiles(context),
-            ],
-          ),
+        body: Stack(
+          children: [
+            Container(
+              width: double.infinity,
+              height: double.infinity,
+              decoration: BoxDecoration(
+                color: Color.fromARGB(255, 227, 221, 238),
+              ),
+            ),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 150),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Opacity(
+                      opacity: _isScanning || _hasScanned ? 0.2 : 1.0, // Change opacity based on scanning state
+                      child: Image.asset(
+                        "lib/images/background1.png",
+                        width: 300,
+                        height: 300,
+                      ),
+                    ),
+                    if (!_isScanning && !_hasScanned) ...[
+                      SizedBox(height: 20),
+                      AppText(
+                        text: 'Welcome, BioSense',
+                        size: 20
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            RefreshIndicator(
+              onRefresh: onRefresh,
+              child: ListView(
+                children: <Widget>[
+                  ..._buildSystemDeviceTiles(context),
+                  ..._buildScanResultTiles(context),
+                ],
+              ),
+            ),
+          ],
         ),
         floatingActionButton: buildScanButton(context),
       ),
